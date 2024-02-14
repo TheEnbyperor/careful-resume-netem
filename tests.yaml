@@ -1,0 +1,11 @@
+tests:
+  - network_delay_rtt_ms: 600
+    network_rate_mbit: 100
+    file: "1MB.bin"
+
+  - network_delay_rtt_ms: 600
+    network_rate_mbit: 100
+    file: "1MB.bin"
+    careful_resume:
+      rtt_ms: 600
+      cwnd: 600000

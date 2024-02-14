@@ -1,0 +1,17 @@
+FROM ubuntu:22.04
+
+RUN apt-get update
+
+RUN apt-get install -y build-essential curl git cmake libclang-dev iproute2 iputils-ping
+
+RUN curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly -y
+ENV PATH="/root/.cargo/bin:${PATH}"
+
+COPY files /files
+COPY certs /certs
+
+COPY server /server
+WORKDIR /server
+RUN cargo build --release
+
+CMD ["/server/target/release/server"]

@@ -1,0 +1,5 @@
+docker
+matplotlib
+pyyaml
+latex
+jinja2

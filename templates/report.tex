@@ -1,0 +1,37 @@
+\documentclass[fontsize=12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage[top=1cm, bottom=1cm, left=0.5cm, right=0.5cm, includehead, includefoot, heightrounded]{geometry}
+
+\title{Careful resume test report}
+\author{Q Misell}
+
+\begin{document}
+\maketitle{}
+
+%- for test in tests
+\newpage{}
+\section{Test \VAR{loop.index}}
+
+\subsection{Parameters}
+\begin{itemize}
+\item Test file: \VAR{test.test_file}
+\item Network delay RTT: \VAR{test.network_delay_rtt_ms} ms
+\item Network rate: \VAR{test.network_rate_mbit} Mbps
+%- if test.careful_resume
+\item Careful resume RTT: \VAR{test.careful_resume.rtt_ms} ms
+\item Careful resume CWND: \VAR{test.careful_resume.cwnd}
+%- else
+\item No careful resume
+%- endif
+\end{itemize}
+
+\subsection{Results}
+\begin{itemize}
+\item Data moved: \VAR{test.data_moved} bytes
+\item Throughput: \VAR{test.throughput} Mbps
+\end{itemize}
+
+\includegraphics[width=0.95\textwidth]{\VAR{test.plot}}
+%- endfor
+\end{document}

@@ -1,0 +1,4 @@
+containers/files/1MB.bin filter=lfs diff=lfs merge=lfs -text
+containers/files/10MB.bin filter=lfs diff=lfs merge=lfs -text
+containers/files/100MB.bin filter=lfs diff=lfs merge=lfs -text
+containers/files/1GB.bin filter=lfs diff=lfs merge=lfs -text
