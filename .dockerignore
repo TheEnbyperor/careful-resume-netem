@@ -1,2 +1,13 @@
 containers/server/target/
 containers/client/target/
+qlog/
+qlog-temp/
+bdp/
+.gitignore
+.gitattributes
+build.sh
+main.py
+plot.py
+report.pdf
+requirements.txt
+tests.yaml

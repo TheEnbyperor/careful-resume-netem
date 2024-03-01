@@ -2,16 +2,19 @@ FROM ubuntu:22.04
 
 RUN apt-get update
 
-RUN apt-get install -y build-essential curl git cmake libclang-dev iproute2 iputils-ping
+RUN apt-get install -y build-essential curl git cmake libclang-dev iproute2 iputils-ping wget
+
+RUN wget https://go.dev/dl/go1.22.0.linux-arm64.tar.gz && rm -rf /usr/local/go \
+     && tar -C /usr/local -xzf go1.22.0.linux-arm64.tar.gz
 
 RUN curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly -y
-ENV PATH="/root/.cargo/bin:${PATH}"
+ENV PATH="/usr/local/go/bin:/root/.cargo/bin:${PATH}"
 
 COPY files /files
 COPY certs /certs
 
 COPY server /server
 WORKDIR /server
-RUN cargo build --release
+RUN /root/.cargo/bin/cargo build --release
 
 CMD ["/server/target/release/server"]

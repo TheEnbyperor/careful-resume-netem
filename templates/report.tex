@@ -11,27 +11,30 @@
 
 %- for test in tests
 \newpage{}
-\section{Test \VAR{loop.index}}
-
+\section{Test - \VAR{test.id}}
 \subsection{Parameters}
 \begin{itemize}
-\item Test file: \VAR{test.test_file}
-\item Network delay RTT: \VAR{test.network_delay_rtt_ms} ms
-\item Network rate: \VAR{test.network_rate_mbit} Mbps
-%- if test.careful_resume
-\item Careful resume RTT: \VAR{test.careful_resume.rtt_ms} ms
-\item Careful resume CWND: \VAR{test.careful_resume.cwnd}
-%- else
-\item No careful resume
-%- endif
+    \item Test file: \VAR{test.test_file}
 \end{itemize}
 
-\subsection{Results}
+%- for run in test.runs
+\subsection{Run \VAR{loop.index}}
+\subsubsection{Parameters}
 \begin{itemize}
-\item Data moved: \VAR{test.data_moved} bytes
-\item Throughput: \VAR{test.throughput} Mbps
+    \item Network delay RTT: \VAR{run.network_delay_rtt_ms} ms
+    \item Network delay volatility: \VAR{run.network_delay_volatility_ms} ms
+    \item Network rate: \VAR{run.network_rate_mbit} Mbps
+    \item Packet loss: \VAR{run.packet_loss_percentage}\%
 \end{itemize}
 
-\includegraphics[width=0.95\textwidth]{\VAR{test.plot}}
+\subsubsection{Results}
+\begin{itemize}
+\item Data moved: \VAR{run.data_moved} bytes
+\item Throughput: \VAR{run.throughput} Mbps
+\end{itemize}
+
+\includegraphics[width=0.9\textwidth]{\VAR{run.plot}}
+%- endfor
+
 %- endfor
 \end{document}

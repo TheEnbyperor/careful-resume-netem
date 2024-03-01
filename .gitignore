@@ -2,7 +2,6 @@ containers/client/target/
 containers/server/target/
 __pycache__/
 .idea/
-qlog/
-qlog-temp/
 report.pdf
 venv/
+data/

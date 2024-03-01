@@ -7,8 +7,11 @@ edition = "2021"
 log = "0.4.20"
 pretty_env_logger = "0.5.0"
 tokio = { version = "1.33.0", features = ["net", "macros", "rt-multi-thread", "time", "sync", "fs", "io-util"] }
-quiche-tokio = { git = "https://github.com/theenbyperor/quiver", rev = "a4850fcaac6b2f12eb022e8d52ea9c476b13b7cd" }
-quiver-h3 = { git = "https://github.com/theenbyperor/quiver", rev = "a4850fcaac6b2f12eb022e8d52ea9c476b13b7cd" }
-quiche = { git = "https://github.com/theenbyperor/quiche", rev = "1daf38aa4e522a02e0b5e97c0bc7ccbb98e4f517" }
+quiche-tokio = { git = "https://github.com/theenbyperor/quiver", rev = "100ea730c61eeccb45e25b3d7b3834f8b4a2b928" }
+quiver-h3 = { git = "https://github.com/theenbyperor/quiver", rev = "100ea730c61eeccb45e25b3d7b3834f8b4a2b928" }
+quiver-bdp-tokens = { git = "https://github.com/theenbyperor/quiver", rev = "100ea730c61eeccb45e25b3d7b3834f8b4a2b928" }
+quiche = { git = "https://github.com/theenbyperor/quiche", rev = "0cc64c99b6d18b0b5e5f292a9ff77bfdb0bc63b3" }
 url = "2.5.0"
 rand = "0.8.5"
+rustbreak = { version = "2.0.0", features = ["yaml_enc"] }
+serde = "1"

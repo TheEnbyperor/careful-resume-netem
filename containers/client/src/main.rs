@@ -5,16 +5,33 @@ use rand::seq::SliceRandom;
 
 const MAX_DATAGRAM_SIZE: usize = 1350;
 
+const MAX_STREAM_DATA_CAP: u64 = 10 * 1024u64.pow(2);
+
+#[derive(Debug, serde::Serialize, serde::Deserialize, Clone, Default)]
+struct TokenDatabase {
+    tokens: std::collections::HashMap<String, Token>
+}
+
+#[derive(Debug, serde::Serialize, serde::Deserialize, Clone)]
+struct Token {
+    address_validation_data: Vec<u8>,
+    bdp_token: Option<quiver_bdp_tokens::BDPToken>,
+}
+
 #[tokio::main]
 async fn main() {
     pretty_env_logger::init();
+
+    let bdp_db_path = std::path::PathBuf::from("/data/bdp.db");
+    let bdp_db = std::sync::Arc::new(rustbreak::PathDatabase::<
+        TokenDatabase, rustbreak::deser::Yaml
+    >::load_from_path_or_default(bdp_db_path).unwrap());
 
     let url = url::Url::parse(&std::env::var("SERVER_URL").unwrap()).unwrap();
     let url_host = url.host_str().unwrap();
     let url_port = url.port_or_known_default().unwrap();
     let url_authority = format!("{}:{}", url_host, url_port);
-    let url_domain = url.domain().unwrap();
-    let peer_addrs = tokio::net::lookup_host(url_authority)
+    let peer_addrs = tokio::net::lookup_host(&url_authority)
         .await
         .unwrap()
         .collect::<Vec<_>>();
@@ -39,12 +56,93 @@ async fn main() {
     config.enable_pacing(false);
     config.enable_resume(true);
 
+    let (token, default_stream_window) = bdp_db.read(|db| {
+        match db.tokens.get(&url_authority).map(|t| {
+            let t = t.clone();
+
+            let mut ex_token = quiver_bdp_tokens::ExToken::default();
+            ex_token.address_validation_data = t.address_validation_data;
+
+            let mut saved_capacity = None;
+
+            if let Some(mut bdp_token) = t.bdp_token {
+                bdp_token.requested_capacity = bdp_token.saved_capacity;
+
+                let mut token_buf = Vec::new();
+                bdp_token.encode(&mut token_buf).unwrap();
+
+                ex_token.extensions.insert(quiver_bdp_tokens::ExtensionType::BDPToken, token_buf);
+                saved_capacity = Some(bdp_token.saved_capacity);
+            }
+
+            let mut ex_token_buf = Vec::new();
+            ex_token.encode(&mut ex_token_buf).unwrap();
+
+            (ex_token_buf, saved_capacity)
+        }) {
+            Some(r) => (Some(r.0), r.1),
+            None => (None, None)
+        }
+    }).unwrap();
+
     info!("Setting up QUIC connection to {} - {}", url, peer_addr);
-    let connection = quiche_tokio::Connection::connect(
-        peer_addr, config, Some(url_domain), None, None, None,
+    let mut connection = quiche_tokio::Connection::connect(
+        peer_addr, config, Some(url_host), None, token.as_deref(), None,
     ).await.unwrap();
     connection.established().await.unwrap();
     info!("QUIC connection open");
+
+    if let Some(default_stream_window) = default_stream_window {
+        connection.setup_default_stream_window(default_stream_window).await.unwrap();
+    }
+
+    let trans_params = connection.transport_parameters().await.unwrap();
+    let server_bdp_tokens = trans_params.bdp_tokens;
+
+    if !server_bdp_tokens {
+        warn!("Server not using extensible tokens");
+    } else {
+        info!("Server using extensible tokens");
+        let mut new_token_recv = connection.new_tokens();
+        let bdp_db = bdp_db.clone();
+        tokio::task::spawn(async move {
+            while let Some(token) = match new_token_recv.next().await {
+                Ok(r) => r,
+                Err(err) => {
+                    // H3_NO_ERROR
+                    if err.to_id() == 0x100 {
+                        return
+                    }
+                    panic!("Error receiving tokens: {:?}", err);
+                }
+            } {
+                trace!("New token received: {:02x?}", token);
+                let mut token_buf = std::io::Cursor::new(token);
+                let ex_token = quiver_bdp_tokens::ExToken::decode(&mut token_buf).unwrap();
+                info!("Extensible token: {:02x?}", ex_token);
+
+                let token = Token {
+                    bdp_token: ex_token.get_extension(quiver_bdp_tokens::ExtensionType::BDPToken)
+                        .map(|bdp_token_bytes| {
+                            let mut bdp_token_buf = std::io::Cursor::new(bdp_token_bytes);
+                            let bdp_token = quiver_bdp_tokens::BDPToken::decode(&mut bdp_token_buf).unwrap();
+                            info!("BDP token: {:?}", bdp_token);
+                            bdp_token
+                        }),
+                    address_validation_data: ex_token.address_validation_data,
+                };
+
+                bdp_db.write(|db| {
+                    db.tokens.insert(url_authority.clone(), token);
+                }).unwrap();
+            }
+        });
+    }
+
+    if let Ok(cwnd) = std::env::var("CR_CWND") {
+        let cwnd = u64::from_str_radix(&cwnd, 10).unwrap();
+        connection.setup_default_stream_window(cwnd / 2).await.unwrap()
+    }
 
     let dcid = format!("{:?}", connection.dcid().await.unwrap());
 
@@ -63,6 +161,13 @@ async fn main() {
     let mut response = h3_connection.send_request(&headers).await.unwrap();
     info!("Got response: {:#?}", response);
 
+    if let Some(max_data) = response.headers().get_header_one(b"content-length")
+        .and_then(|h| String::from_utf8(h.value.to_vec()).ok())
+        .and_then(|v| v.parse::<u64>().ok())
+        .map(|cl|  std::cmp::min(MAX_STREAM_DATA_CAP, cl)) {
+        response.set_max_data(max_data).await.unwrap();
+    }
+
     let mut total = 0;
     let start = std::time::Instant::now();
     while let Some(data) = response.get_next_data().await.unwrap() {
@@ -77,5 +182,10 @@ async fn main() {
     h3_connection.close().await.unwrap();
     info!("HTTP/3 and QUIC connection closed");
 
-    println!("\x1e{{\"dcid\": \"{}\", \"total\": {}, \"rate\": {}}}", dcid, total, mbit_per_sec);
+    bdp_db.save().unwrap();
+
+    println!(
+        "\x1e{{\"dcid\": \"{}\", \"total\": {}, \"time\": {}, \"rate\": {}}}",
+        dcid, total, elapsed.as_secs_f64(), mbit_per_sec
+    );
 }

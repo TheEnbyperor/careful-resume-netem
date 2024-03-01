@@ -1,11 +1,67 @@
-tests:
-  - network_delay_rtt_ms: 600
-    network_rate_mbit: 100
-    file: "1MB.bin"
+graph_plots:
+  - "cr_phase"
+  - "cr_pipesize"
+  - "cwnd"
+  - "bytes_in_flight"
+  - "smoothed_rtt"
+  - "connection_data_limit"
+  - "stream_data_limit"
+  - "data_sent"
+  - "packet_loss"
 
-  - network_delay_rtt_ms: 600
-    network_rate_mbit: 100
+tests:
+#  - id: "10ms RTT"
+#    file: "1MB.bin"
+#    runs:
+#      - network_delay_rtt_ms: 10
+#        network_delay_volatility_ms: 0
+#        network_rate_mbit: 10
+#        packet_loss_percentage: 0
+#      - network_delay_rtt_ms: 10
+#        network_delay_volatility_ms: 0
+#        network_rate_mbit: 10
+#        packet_loss_percentage: 0
+#  - id: "30ms RTT"
+#    file: "1MB.bin"
+#    runs:
+#      - network_delay_rtt_ms: 30
+#        network_delay_volatility_ms: 0
+#        network_rate_mbit: 10
+#        packet_loss_percentage: 0
+#      - network_delay_rtt_ms: 30
+#        network_delay_volatility_ms: 0
+#        network_rate_mbit: 10
+#        packet_loss_percentage: 0
+#  - id: "100ms RTT"
+#    file: "1MB.bin"
+#    runs:
+#      - network_delay_rtt_ms: 100
+#        network_delay_volatility_ms: 0
+#        network_rate_mbit: 10
+#        packet_loss_percentage: 0
+#      - network_delay_rtt_ms: 100
+#        network_delay_volatility_ms: 0
+#        network_rate_mbit: 10
+#        packet_loss_percentage: 0
+#  - id: "400ms RTT"
+#    file: "1MB.bin"
+#    runs:
+#      - network_delay_rtt_ms: 400
+#        network_delay_volatility_ms: 0
+#        network_rate_mbit: 10
+#        packet_loss_percentage: 0
+#      - network_delay_rtt_ms: 400
+#        network_delay_volatility_ms: 0
+#        network_rate_mbit: 10
+#        packet_loss_percentage: 0
+  - id: "800ms RTT"
     file: "1MB.bin"
-    careful_resume:
-      rtt_ms: 600
-      cwnd: 600000
+    runs:
+      - network_delay_rtt_ms: 800
+        network_delay_volatility_ms: 0
+        network_rate_mbit: 10
+        packet_loss_percentage: 0
+      - network_delay_rtt_ms: 800
+        network_delay_volatility_ms: 0
+        network_rate_mbit: 10
+        packet_loss_percentage: 0
